@@ -1,0 +1,31 @@
+# Local configuration and secrets
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.pfx
+*.p12
+
+# Dependencies, builds, and validation output
+node_modules/
+.next/
+bin/
+obj/
+.tools/
+artifacts/
+coverage/
+playwright-report/
+test-results/
+*.tsbuildinfo
+__pycache__/
+*.py[cod]
+*.log
+
+# Local editor and operating system files
+.vs/
+.idea/
+*.user
+*.suo
+.DS_Store
+Thumbs.db

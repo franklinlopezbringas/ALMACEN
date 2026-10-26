@@ -1,0 +1,17 @@
+import {loadEnvFile} from 'node:process';import{execFileSync}from'node:child_process';import{readFile,writeFile}from'node:fs/promises';import{randomUUID}from'node:crypto';import{dirname,resolve}from'node:path';import{fileURLToPath}from'node:url';
+const root=resolve(dirname(fileURLToPath(import.meta.url)),'../..');loadEnvFile(resolve(root,'frontend/.env.local'));const origin=process.env.GYMFLOW_API_URL;if(origin!=='http://127.0.0.1:5080')throw Error('Local only');let token;const checks=[];
+function check(name,pass){checks.push({name,pass});if(!pass)throw Error(name);}
+async function http(path,body,status=200){const r=await fetch(origin+'/api/v1/'+path,{method:body?'POST':'GET',headers:{'Content-Type':'application/json',...(token?{Authorization:'Bearer '+token}:{})},body:body?JSON.stringify(body):undefined});check(path+' '+status,r.status===status);return status===204||status>=400?null:r.json();}
+try{
+token=(await http('auth/login',{email:process.env.GYMFLOW_E2E_RECEPTION_EMAIL,password:process.env.GYMFLOW_E2E_RECEPTION_PASSWORD,organizationPublicId:process.env.NEXT_PUBLIC_ORGANIZATION_ID})).accessToken;
+const a=JSON.parse(await readFile(resolve(root,'backend/artifacts/reception-fixture.json'),'utf8'));const b=JSON.parse(await readFile(resolve(root,'backend/artifacts/closure-live-fixture.json'),'utf8'));
+for(const id of [a.memberId,b.memberId])if(!Number.isSafeInteger(id)||id<1)throw Error('Invalid fixture');
+const out=execFileSync('sqlcmd',['-S','.\\SQLEXPRESS','-E','-C','-I','-b','-f','65001','-i',resolve(root,'database/tests/ReceptionClosureFixtures.sql'),'-v','MemberA='+a.memberId,'MemberB='+b.memberId,'-h','-1','-w','65535'],{encoding:'utf8',windowsHide:true});const f=JSON.parse(out.split(/\r?\n/).find(l=>l.trim().startsWith('{')));
+const participants=id=>http(`classes/sessions/${id}/participants?pageSize=100`);const move=(r,status)=>({requestId:randomUUID(),status,reservedAtUtc:r.reservedAtUtc});
+let rows=(await participants(f.futureSessionId)).items;let r=rows.find(r=>r.memberId===f.memberA);let action=move(r,'CANCELLED');await http(`classes/reservations/${r.reservationId}/status`,action,204);await http(`classes/reservations/${r.reservationId}/status`,action,204);
+rows=(await participants(f.futureSessionId)).items;check('FIFO promotes first waiting member',rows.find(r=>r.memberId===f.memberB).status==='CONFIRMED');check('Second waiting member stays waiting',rows.find(r=>r.memberId===f.memberC).status==='WAITLISTED');
+rows=(await participants(f.currentSessionId)).items;r=rows.find(r=>r.memberId===f.memberA);await http(`classes/reservations/${r.reservationId}/status`,move(r,'CANCELLED'),409);await http(`classes/reservations/${r.reservationId}/status`,move(r,'ATTENDED'),204);
+r=rows.find(r=>r.memberId===f.memberB);await http(`classes/reservations/${r.reservationId}/status`,move(r,'NO_SHOW'),409);
+r=(await participants(f.pastSessionId)).items[0];await http(`classes/reservations/${r.reservationId}/status`,move(r,'NO_SHOW'),204);check('Past session no-show recorded',(await participants(f.pastSessionId)).items[0].status==='NO_SHOW');
+await writeFile(resolve(root,'backend/artifacts/closure-class-fixture.json'),JSON.stringify(f,null,2));
+}finally{await writeFile(resolve(root,'backend/artifacts/closure-class-smoke.json'),JSON.stringify(checks,null,2));console.log(`${checks.filter(c=>c.pass).length}/${checks.length} class HTTP checks passed.`);}

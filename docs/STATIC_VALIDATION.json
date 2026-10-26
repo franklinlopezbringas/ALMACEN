@@ -1,0 +1,10 @@
+{
+  "physical_tables": 99,
+  "csharp_files": 106,
+  "api_permission_codes": 21,
+  "errors": [],
+  "notes": [
+    "This is static validation only; it is not a substitute for SQL Server execution or dotnet build/test.",
+    "Run CODEX_EXECUTION.md completion gates before labeling the package validated."
+  ]
+}

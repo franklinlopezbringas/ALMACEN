@@ -1,0 +1,23 @@
+/* Isolated fictitious class state fixtures. No credentials or existing reservations modified. */
+USE GymFlowDb;
+SET NOCOUNT ON;
+SET XACT_ABORT ON;
+SET QUOTED_IDENTIFIER ON;
+DECLARE @org bigint=(SELECT OrganizationId FROM core.Organizations WHERE TaxId='DEMO-GYMFLOW-001');
+DECLARE @a bigint=$(MemberA),@b bigint=$(MemberB);
+IF @a=@b OR (SELECT COUNT(*) FROM core.Members WHERE OrganizationId=@org AND MemberId IN(@a,@b))<>2 THROW 51110,'Members must belong to the demo organization.',1;
+DECLARE @c bigint=(SELECT TOP(1) MemberId FROM core.Members WHERE OrganizationId=@org AND MemberId NOT IN(@a,@b) AND Status='ACTIVE' ORDER BY MemberId);
+DECLARE @branch bigint=(SELECT TOP(1) BranchId FROM core.Branches WHERE OrganizationId=@org AND Status='ACTIVE' ORDER BY BranchId);
+DECLARE @class bigint=(SELECT TOP(1) ClassId FROM training.Classes WHERE OrganizationId=@org ORDER BY ClassId);
+BEGIN TRANSACTION;
+INSERT training.ClassSessions(OrganizationId,ClassId,BranchId,StartsAtUtc,EndsAtUtc,Capacity) VALUES(@org,@class,@branch,DATEADD(hour,2,SYSUTCDATETIME()),DATEADD(hour,3,SYSUTCDATETIME()),1);
+DECLARE @future bigint=SCOPE_IDENTITY();
+INSERT training.ClassReservations(OrganizationId,ClassSessionId,MemberId,Status,WaitlistPosition,Source) VALUES(@org,@future,@a,'CONFIRMED',NULL,'RECEPTION'),(@org,@future,@b,'WAITLISTED',1,'RECEPTION'),(@org,@future,@c,'WAITLISTED',2,'RECEPTION');
+INSERT training.ClassSessions(OrganizationId,ClassId,BranchId,StartsAtUtc,EndsAtUtc,Capacity) VALUES(@org,@class,@branch,DATEADD(minute,-15,SYSUTCDATETIME()),DATEADD(minute,45,SYSUTCDATETIME()),2);
+DECLARE @current bigint=SCOPE_IDENTITY();
+INSERT training.ClassReservations(OrganizationId,ClassSessionId,MemberId,Status,Source) VALUES(@org,@current,@a,'CONFIRMED','RECEPTION'),(@org,@current,@b,'CONFIRMED','RECEPTION');
+INSERT training.ClassSessions(OrganizationId,ClassId,BranchId,StartsAtUtc,EndsAtUtc,Capacity) VALUES(@org,@class,@branch,DATEADD(hour,-2,SYSUTCDATETIME()),DATEADD(hour,-1,SYSUTCDATETIME()),1);
+DECLARE @past bigint=SCOPE_IDENTITY();
+INSERT training.ClassReservations(OrganizationId,ClassSessionId,MemberId,Status,Source) VALUES(@org,@past,@a,'CONFIRMED','RECEPTION');
+COMMIT;
+SELECT @future futureSessionId,@current currentSessionId,@past pastSessionId,@a memberA,@b memberB,@c memberC FOR JSON PATH,WITHOUT_ARRAY_WRAPPER;

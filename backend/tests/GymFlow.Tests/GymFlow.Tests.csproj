@@ -1,0 +1,14 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\GymFlow.Domain\GymFlow.Domain.csproj" />
+    <ProjectReference Include="..\..\src\GymFlow.Application\GymFlow.Application.csproj" />
+    <ProjectReference Include="..\..\src\GymFlow.Infrastructure\GymFlow.Infrastructure.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" />
+    <PackageReference Include="xunit.v3" />
+  </ItemGroup>
+</Project>
