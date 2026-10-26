@@ -11,8 +11,9 @@ clean = re.sub(r"/\*.*?\*/", "", sql, flags=re.S)
 clean = re.sub(r"--.*", "", clean)
 
 tables = re.findall(r"CREATE TABLE\s+([\w]+\.[\w]+)\s*\((.*?)\)\s*;?\s*GO", clean, flags=re.S | re.I)
-if len(tables) != 99:
-    errors.append(f"Expected 99 physical tables, found {len(tables)}")
+# Includes core.ShiftHandoffs from the reception closure schema.
+if len(tables) != 100:
+    errors.append(f"Expected 100 physical tables, found {len(tables)}")
 
 for name, body in tables:
     if re.search(r",\s*$", body):
@@ -53,7 +54,8 @@ known = set(re.findall(r"\('([A-Z0-9_.]+)'", seed))
 for permission in sorted(used - known):
     errors.append(f"API permission not seeded: {permission}")
 
-cs_files = list((root / "backend").rglob("*.cs"))
+cs_files = [p for p in (root / "backend").rglob("*.cs")
+            if not {"obj", "bin", ".tools"}.intersection(p.relative_to(root).parts)]
 for p in cs_files:
     text = p.read_text(encoding="utf-8")
     if text.count("{") != text.count("}"):

@@ -1,7 +1,7 @@
 {
-  "physical_tables": 99,
-  "csharp_files": 106,
-  "api_permission_codes": 21,
+  "physical_tables": 100,
+  "csharp_files": 94,
+  "api_permission_codes": 32,
   "errors": [],
   "notes": [
     "This is static validation only; it is not a substitute for SQL Server execution or dotnet build/test.",

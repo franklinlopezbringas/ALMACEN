@@ -1,6 +1,14 @@
 import type { NextRequest } from "next/server";
-export function validOrigin(request: NextRequest) {
-  return request.headers.get("origin") === process.env.APP_ORIGIN;
+export function validOrigin(request: Pick<NextRequest, "headers">) {
+  const origin = request.headers.get("origin");
+  if (!origin) return false;
+  const allowedOrigins = [
+    process.env.APP_ORIGIN ?? "",
+    ...(process.env.APP_ADDITIONAL_ORIGINS ?? "").split(","),
+  ]
+    .map((value) => value.trim())
+    .filter(Boolean);
+  return allowedOrigins.includes(origin);
 }
 export async function upstream(path: string, init: RequestInit = {}) {
   const origin = process.env.GYMFLOW_API_URL;

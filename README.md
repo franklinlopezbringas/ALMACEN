@@ -1,6 +1,9 @@
 # GymFlow — Database + Backend v1 client-demo foundation
 
-Scope of this package: **database and backend only**. Frontend is intentionally excluded until the persistence/API foundation is validated.
+For Windows local setup, database creation, demo credentials, and commands to start
+the backend and frontend, see [LOCAL_SETUP.md](LOCAL_SETUP.md).
+
+This repository contains the SQL Server database, .NET backend, and Next.js frontend.
 
 ## Structure
 
@@ -8,6 +11,8 @@ Scope of this package: **database and backend only**. Frontend is intentionally 
 GymFlow_Final/
 ├── database/                 SQL Server schema, seeds, demo and integrity tests
 ├── backend/                  .NET 10 ASP.NET Core modular-monolith API
+├── frontend/                 Next.js web application
+├── scripts/                  Windows local setup, start and stop commands
 ├── docs/                     architecture, DER and validation notes
 └── CODEX_EXECUTION.md        exact execution/validation brief for Codex
 ```
